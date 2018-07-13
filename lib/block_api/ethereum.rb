@@ -87,16 +87,21 @@ module BlockAPI
     end
 
     def invalid_transaction?(tx)
-      return true if tx['to'].blank?
-      # Skip outcomes (less than zero) and contract transactions (zero).
-      return true if tx.fetch('value').hex.to_d <= 0 && tx['input'].hex <= 0
-      #check if valid ERC20 transaction using transfer method id
-      return true if tx['input'].hex > 0 && abi_method(tx['input']) != TOKEN_METHOD_ID
-      false
+      tx['to'].blank? \
+      || tx.fetch('value').hex.to_d <= 0 && tx['input'].hex <= 0 \
+      || tx['input'].hex > 0 && abi_method(tx['input']) != TOKEN_METHOD_ID
     end
 
-    def is_erc20_txn?(tx)
+    def valid_transaction?(tx)
+      !invalid_transaction?(tx)
+    end
+
+    def is_erc20_tx?(tx)
       !is_eth_tx?(tx)
+    end
+
+    def is_eth_tx?(tx)
+      tx['input'].blank? || tx['input'].hex <= 0
     end
 
   protected
@@ -173,10 +178,6 @@ module BlockAPI
 
     def valid_txid?(txid)
       txid.to_s.match?(/\A0x[A-F0-9]{64}\z/i)
-    end
-
-    def is_eth_tx?(tx)
-      tx['input'].blank? || tx['input'].hex <= 0
     end
 
     def build_eth_deposit(tx, current_block, latest_block, currency)
